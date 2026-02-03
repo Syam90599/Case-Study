@@ -1,0 +1,543 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={ROS 2--Based Dynamic Mapping, Path Planning, and Maze Solving for an Autonomous Mobile Robot},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{\textbf{ROS 2--Based Dynamic Mapping, Path Planning, and Maze
+Solving for an Autonomous Mobile Robot}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\hypertarget{abstract}{%
+\section{\texorpdfstring{\textbf{Abstract}}{Abstract}}\label{abstract}}
+
+Autonomous mobile robots are increasingly deployed in indoor and
+semi-structured environments where reliable navigation is essential.
+This paper presents the implementation and evaluation of a complete
+autonomous navigation pipeline using ROS 2 in a simulated maze
+environment. Dynamic mapping, probabilistic localization, and path
+planning are achieved using SLAM Toolbox, AMCL, and the Nav2 framework.
+In addition, a custom A*-based maze-solving algorithm is developed for
+comparative evaluation. Simulation results demonstrate accurate mapping,
+stable localization, and effective navigation with dynamic replanning
+capabilities.
+
+\emph{\textbf{Keywords:} ROS 2, SLAM, AMCL, Nav2, Autonomous Navigation,
+Path Planning, Maze Solving}
+
+\hypertarget{introduction}{%
+\subsection{\texorpdfstring{\textbf{Introduction}}{Introduction}}\label{introduction}}
+
+Autonomous mobile robots are increasingly deployed in indoor and
+semi-structured environments such as warehouses, hospitals, and research
+facilities, where safe and reliable navigation is critical. In such
+environments, robots are required to operate without prior knowledge of
+the surroundings, which necessitates the ability to perform mapping,
+localization, and path planning in real time.
+
+This coursework investigates the feasibility of implementing a complete
+autonomous navigation pipeline using ROS 2 within a simulated maze
+environment. The primary objective is to evaluate how effectively a
+mobile robot can construct an environmental model, estimate its pose,
+and navigate toward specified targets while responding to environmental
+changes.
+
+The study is conducted in simulation using Gazebo and RViz2, enabling
+controlled experimentation while maintaining realism through
+physics-based interactions. The robot platform selected is TurtleBot3,
+which provides standardized sensors and software integration within ROS
+2.
+
+\hypertarget{problem-statement}{%
+\subsubsection{\texorpdfstring{\textbf{Problem
+Statement}}{Problem Statement}}\label{problem-statement}}
+
+Autonomous mobile robots must be able to navigate from a start position
+to a target location without human assistance. Simple follower-based or
+straight-line motion approaches are not sufficient, as they do not
+support goal-based navigation or global path planning. The objective of
+this project is to develop an autonomous mobile robot that can compute
+an optimal collision-free path using the A* algorithm and reach the goal
+point autonomously. The system integrates mapping, localization, path
+planning, and motion control under a Cyber-Physical Systems framework.
+
+\hypertarget{state-of-the-art}{%
+\subsubsection{\texorpdfstring{\textbf{State of the
+Art}}{State of the Art}}\label{state-of-the-art}}
+
+Various path planning techniques such as BFS, Dijkstra's algorithm, and
+RRT have been proposed for autonomous navigation. However, these methods
+either suffer from high computational complexity or do not guarantee
+optimal paths. The A* algorithm is widely used in modern robotic systems
+due to its efficiency and optimality achieved through heuristic-based
+search. Robotic frameworks like ROS implement A* within navigation
+stacks, combining it with localization and obstacle avoidance for
+reliable autonomous navigation in indoor environments.
+
+\hypertarget{methodology}{%
+\subsubsection{\texorpdfstring{\textbf{Methodology}}{Methodology}}\label{methodology}}
+
+The system begins with the generation of an occupancy grid map using
+SLAM. The robot then localizes itself within the map and applies the A*
+algorithm as a global planner to compute the optimal path to the goal. A
+local control module follows the planned path by generating appropriate
+velocity commands while avoiding obstacles. Continuous sensor feedback
+enables closed-loop control, ensuring safe and autonomous navigation.
+
+\hypertarget{potential-application-areas}{%
+\subsubsection{\texorpdfstring{\textbf{Potential Application
+Areas}}{Potential Application Areas}}\label{potential-application-areas}}
+
+\textbf{4.1 Warehouse Automation}
+
+Autonomous robots can efficiently transport goods within warehouses by
+navigating predefined maps using A* path planning.
+
+\textbf{4.2 Service Robots}
+
+Service robots operating in hospitals, offices, and public spaces can
+autonomously reach assigned locations for delivery and assistance tasks.
+
+\textbf{4.3 Smart Manufacturing}
+
+In smart factories, mobile robots can perform inspection and material
+handling tasks by integrating autonomous navigation with cyber-physical
+control systems.
+
+\includegraphics[width=6.25087in,height=3.69843in]{media/image1.png}
+
+\hypertarget{part-1-simulation-study-and-system-configuration}{%
+\section{\texorpdfstring{\textbf{Part 1: Simulation Study and System
+Configuration}}{Part 1: Simulation Study and System Configuration}}\label{part-1-simulation-study-and-system-configuration}}
+
+\hypertarget{objective-of-simulation-investigation}{%
+\subsection{\texorpdfstring{\textbf{Objective of Simulation
+Investigation}}{Objective of Simulation Investigation}}\label{objective-of-simulation-investigation}}
+
+The primary objective of this phase is to establish a representative
+operational environment in which autonomous navigation algorithms can be
+tested safely and repeatedly. Simulation is essential for validating
+algorithmic performance prior to real-world deployment, reducing the
+risk of hardware failure and enabling repeatable experimental
+conditions.
+
+\includegraphics[width=5.58218in,height=3.15669in]{media/image2.png}
+
+The simulated environment consists of a structured maze containing
+narrow corridors, junctions, and dead ends. This configuration provides
+a challenging test scenario for mapping accuracy and path planning
+efficiency.
+
+\hypertarget{robot-model-and-sensor-configuration}{%
+\subsection{\texorpdfstring{\textbf{Robot Model and Sensor
+Configuration}}{Robot Model and Sensor Configuration}}\label{robot-model-and-sensor-configuration}}
+
+The TurtleBot3 Burger platform is employed, which operates using a
+differential drive mechanism. The robot is equipped with:
+
+\begin{itemize}
+\item
+  Wheel encoders for odometry estimation
+\item
+  A 2D LiDAR sensor for obstacle detection and environment perception
+\item
+  Standardized coordinate frames for localization and navigation
+\end{itemize}
+
+Odometry data is derived from wheel rotations and is inherently subject
+to cumulative drift. LiDAR provides accurate range measurements but may
+suffer from reflective noise near sharp surfaces. The fusion of these
+sensors forms the basis for both mapping and localization.
+
+RViz2 is used to visualize the robot model, laser scans, coordinate
+frames, and planned navigation paths, facilitating continuous system
+verification.
+
+\hypertarget{part-2-dynamic-mapping-and-environmental-modelling}{%
+\section{\texorpdfstring{\textbf{Part 2: Dynamic Mapping and
+Environmental
+Modelling}}{Part 2: Dynamic Mapping and Environmental Modelling}}\label{part-2-dynamic-mapping-and-environmental-modelling}}
+
+\hypertarget{slam-implementation-and-data-sources}{%
+\subsection{\texorpdfstring{\textbf{SLAM Implementation and Data
+Sources}}{SLAM Implementation and Data Sources}}\label{slam-implementation-and-data-sources}}
+
+Simultaneous Localization and Mapping (SLAM) is implemented using SLAM
+Toolbox, which employs scan matching and pose graph optimization to
+estimate robot trajectory while generating an occupancy grid
+representation of the environment.
+
+The algorithm processes:
+
+\begin{itemize}
+\item
+  LaserScan messages from the LiDAR sensor
+\item
+  Odometry data from wheel encoders
+\item
+  Transform relationships between coordinate frames
+\end{itemize}
+
+Through continuous motion, the robot incrementally constructs a
+two-dimensional occupancy grid where each cell represents the
+probability of being occupied.
+
+\includegraphics[width=6.23004in,height=3.62551in]{media/image3.png}
+
+This image represents the maze map generated dynamically while the robot
+explores the environment. The map is saved as a .pgm file after SLAM
+completes. Black areas indicate walls, white areas indicate free space,
+and gray regions indicate unknown areas.
+
+\hypertarget{analysis-of-generated-map}{%
+\subsection{\texorpdfstring{\textbf{Analysis of Generated
+Map}}{Analysis of Generated Map}}\label{analysis-of-generated-map}}
+
+Figure 1 illustrates the final occupancy grid after full maze
+exploration. Black regions correspond to wall structures and obstacles,
+while white regions indicate navigable free space. Grey regions
+represent unexplored or uncertain areas.
+
+From the figure, it can be observed that corridor boundaries are well
+defined, and structural symmetry of the maze is preserved. Minor
+distortions near intersections indicate localized odometric drift, which
+is expected in differential drive systems. However, loop closure events
+reduce global distortion by realigning overlapping scan regions.
+
+The resulting map is considered sufficiently accurate for localization
+and navigation tasks, and is therefore saved and reused in subsequent
+experimental phases.
+
+\hypertarget{part-3-localization-performance-evaluation}{%
+\section{\texorpdfstring{\textbf{Part 3: Localization Performance
+Evaluation}}{Part 3: Localization Performance Evaluation}}\label{part-3-localization-performance-evaluation}}
+
+\hypertarget{amcl-localization-technique}{%
+\subsection{\texorpdfstring{\textbf{AMCL Localization
+Technique}}{AMCL Localization Technique}}\label{amcl-localization-technique}}
+
+Localization is performed using Adaptive Monte Carlo Localization
+(AMCL), which applies particle filtering techniques to estimate robot
+pose within a known map. Multiple hypotheses are maintained
+simultaneously, and sensor measurements are used to weight particle
+likelihood.
+
+Particles with poor correspondence to sensor observations are discarded,
+while high-likelihood particles are resampled, gradually converging
+toward the true robot position.
+
+\hypertarget{interpretation-of-localization-stability}{%
+\subsection{\texorpdfstring{\textbf{Interpretation of Localization
+Stability}}{Interpretation of Localization Stability}}\label{interpretation-of-localization-stability}}
+
+Figure 3 displays the spatial distribution of particles around the robot
+position. A dense clustering of particles indicates strong confidence in
+pose estimation, whereas dispersed particles would suggest uncertainty
+or localization instability.
+
+From the figure, it is evident that particle concentration remains
+localized even during robot movement, demonstrating stable localization.
+This confirms that the map generated in Part 2 provides sufficient
+structural features for reliable sensor matching.
+
+\includegraphics[width=6.25087in,height=3.92763in]{media/image4.png}
+
+\textbf{Figure 3: Particle Distribution During AMCL Localization}
+
+Stable localization is critical for effective path planning, as
+navigation algorithms depend on accurate robot pose estimation relative
+to the environment.
+
+\hypertarget{part-4-path-planning-and-navigation-assessment}{%
+\section{\texorpdfstring{\textbf{Part 4: Path Planning and Navigation
+Assessment}}{Part 4: Path Planning and Navigation Assessment}}\label{part-4-path-planning-and-navigation-assessment}}
+
+\hypertarget{global-planning-using-nav2-framework}{%
+\subsection{\texorpdfstring{\textbf{Global Planning Using Nav2
+Framework}}{Global Planning Using Nav2 Framework}}\label{global-planning-using-nav2-framework}}
+
+The Nav2 framework provides global and local planning capabilities using
+layered costmaps and behavior trees. The global planner computes optimal
+routes using graph search algorithms, while the local planner generates
+real-time velocity commands to follow the path while avoiding obstacles.
+
+\includegraphics[width=6.24045in,height=3.62551in]{media/image5.png}
+
+\hypertarget{dynamic-objects-such-as-moving-obstacles-are-detected-in-real-time-using-lidar-and-are-shown-in-the-local-costmap.-these-obstacles-are-not-stored-in-the-static.-pgm-map-but-are-added-dynamically-to-the-costmap-layers-during-navigation.}{%
+\subsection{Dynamic objects such as moving obstacles are detected in
+real time using LiDAR and are shown in the local costmap. These
+obstacles are not stored in the static. pgm map but are added
+dynamically to the costmap layers during
+navigation.}\label{dynamic-objects-such-as-moving-obstacles-are-detected-in-real-time-using-lidar-and-are-shown-in-the-local-costmap.-these-obstacles-are-not-stored-in-the-static.-pgm-map-but-are-added-dynamically-to-the-costmap-layers-during-navigation.}}
+
+\hypertarget{custom-maze-solver-implementation}{%
+\subsection{\texorpdfstring{\textbf{Custom Maze Solver
+Implementation}}{Custom Maze Solver Implementation}}\label{custom-maze-solver-implementation}}
+
+To assess algorithmic understanding beyond framework-level navigation, a
+custom maze solver is implemented using the A* search algorithm. The
+occupancy grid is converted into a discretized graph where each free
+cell represents a node.
+
+\includegraphics[width=6.25087in,height=3.91721in]{media/image6.png}
+
+The A* algorithm evaluates both travel cost and heuristic distance to
+the goal, producing efficient shortest paths while reducing
+computational complexity.
+
+The path is transmitted to a follower node that converts waypoints into
+velocity commands using heading and distance calculations.
+
+\hypertarget{comparative-path-evaluation}{%
+\subsection{\texorpdfstring{\textbf{Comparative Path
+Evaluation}}{Comparative Path Evaluation}}\label{comparative-path-evaluation}}
+
+Figure 2 shows the global path between start and goal positions. The
+trajectory remains centrally aligned within corridors and avoids
+obstacle boundaries, minimizing collision risk and excessive turning.
+
+\includegraphics[width=6.26806in,height=3.52569in]{media/image7.png}
+
+Comparison between Nav2-generated paths and custom A*-generated paths
+indicates similar routing patterns, validating the correctness of the
+custom implementation. Minor deviations are attributed to smoothing
+effects applied by local planners.
+
+\includegraphics[width=5.96031in,height=3.97022in]{media/image8.png}
+
+\hypertarget{part-5-motion-control-and-dynamic-response}{%
+\section{\texorpdfstring{\textbf{Part 5: Motion Control and Dynamic
+Response}}{Part 5: Motion Control and Dynamic Response}}\label{part-5-motion-control-and-dynamic-response}}
+
+\hypertarget{differential-drive-motion-control}{%
+\subsection{\texorpdfstring{\textbf{Differential Drive Motion
+Control}}{Differential Drive Motion Control}}\label{differential-drive-motion-control}}
+
+Motion control is implemented using proportional control on heading and
+velocity. Angular velocity is adjusted according to angular error
+relative to the next waypoint, while linear velocity is regulated based
+on proximity to obstacles and path curvature with the dynamic maze.
+
+\includegraphics[width=6.18971in,height=3.20833in]{media/image9.gif}
+
+Speed limitations are applied to maintain stability in narrow corridors,
+reducing collision probability. The maze. pgm is generated dynamically
+using SLAM and represents the static environment. Incremental dynamic
+objects are not stored in the .pgm file but are handled by the local
+cost map using real-time sensor data, enabling dynamic replanning in the
+Nav2 framework.
+
+\hypertarget{dynamic-obstacle-handling-and-replanning}{%
+\subsection{\texorpdfstring{\textbf{Dynamic Obstacle Handling and
+Replanning}}{Dynamic Obstacle Handling and Replanning}}\label{dynamic-obstacle-handling-and-replanning}}
+
+To evaluate dynamic response capability, obstacles are introduced after
+initial planning. When obstacles intersect with planned routes, cost
+maps update and global replanning is triggered automatically.
+
+\includegraphics[width=6.25087in,height=2.75038in]{media/image10.png}
+
+The robot successfully recalculates routes and avoids collisions,
+demonstrating adaptability to environmental changes. This behavior is
+essential for real-world deployment where static assumptions are
+unrealistic.
+
+\includegraphics[width=6.26806in,height=4.33333in]{media/image11.gif}
+
+\hypertarget{when-a-dynamic-obstacle-blocks-the-planned-path-the-navigation-system-automatically-triggers-replanning.-the-global-planner-recomputes-a-new-path-using-a-while-the-local-planner-safely-avoids-the-obstacle.}{%
+\subsection{When a dynamic obstacle blocks the planned path, the
+navigation system automatically triggers replanning. The global planner
+recomputes a new path using A* while the local planner safely avoids the
+obstacle.}\label{when-a-dynamic-obstacle-blocks-the-planned-path-the-navigation-system-automatically-triggers-replanning.-the-global-planner-recomputes-a-new-path-using-a-while-the-local-planner-safely-avoids-the-obstacle.}}
+
+\hypertarget{risk-factors-and-system-limitations}{%
+\subsection{\texorpdfstring{\textbf{Risk Factors and System
+Limitations}}{Risk Factors and System Limitations}}\label{risk-factors-and-system-limitations}}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2001}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Risk Factor}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Source}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Impact on System}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Mitigation Strategy}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Risk Factor}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Odometry drift & Wheel slip & Pose estimation error & SLAM loop closure
+& Odometry drift \\
+Sensor noise & Reflective surfaces & Mapping inaccuracy & Scan filtering
+& Sensor noise \\
+Narrow passages & Maze geometry & Collision risk & Reduced velocity &
+Narrow passages \\
+Particle depletion & Localization failure & Navigation error &
+Reinitialization & Particle depletion \\
+\end{longtable}
+
+\textbf{Table 1:} Identified System Risks and Mitigation Measures
+
+\hypertarget{discussion}{%
+\subsection{\texorpdfstring{\textbf{Discussion}}{Discussion}}\label{discussion}}
+
+Results confirm that reliable autonomous navigation can be achieved
+using ROS 2 and classical planning algorithms. Mapping quality directly
+affects localization and navigation performance. While simulation offers
+controlled evaluation, real-world deployment introduces additional
+challenges such as hardware imperfections and environmental variability.
+
+\hypertarget{conclusion}{%
+\subsection{\texorpdfstring{\textbf{Conclusion}}{Conclusion}}\label{conclusion}}
+
+This study demonstrates a complete ROS 2-based autonomous navigation
+system in a simulated maze environment. Dynamic mapping, probabilistic
+localization, and both framework-based and custom planning approaches
+successfully solve navigation tasks. The system's ability to replan in
+dynamic environments highlights its suitability for real-world robotic
+applications.
+
+\hypertarget{references}{%
+\subsection{\texorpdfstring{\textbf{References}}{References}}\label{references}}
+
+\textbf{{[}1{]}} D. Fox, W. Burgard, and S. Thrun, ``Monte Carlo
+localization: Efficient position estimation for mobile robots,''
+\emph{Proc. IEEE Int. Conf. Robotics and Automation (ICRA)}, Detroit,
+MI, USA, 1999, pp. 343--349.
+
+\textbf{{[}2{]}} S. Kohlbrecher, J. Meyer, T. Graber, K. Petersen, O.
+von Stryk, and U. Klingauf, ``Hector SLAM: Real-time mapping and
+localization for autonomous systems,'' \emph{Proc. IEEE/RSJ Int. Conf.
+Intelligent Robots and Systems (IROS)}, Taipei, Taiwan, 2010, pp.
+3988--3993.
+
+\textbf{{[}3{]}} J. J. Leonard and H. F. Durrant-Whyte, ``Simultaneous
+map building and localization for an autonomous mobile robot,''
+\emph{Proc. IEEE/RSJ Int. Workshop on Intelligent Robots and Systems},
+Osaka, Japan, 1991, pp. 1442--1447.
+
+\textbf{{[}4{]}} S. Macenski, T. Moore, D. Lu, A. Merzlyakov, and M.
+Ferguson, ``From the desks of ROS maintainers: A survey of modern
+robotics frameworks,'' \emph{IEEE Robotics \& Automation Magazine}, vol.
+27, no. 2, pp. 47--61, Jun. 2020.
+
+\textbf{{[}5{]}} S. Macenski, M. Ferguson, W. Wise, J. Kunz, M. Walsh,
+P. Bydalek, L. Gan, and M. Carson, ``The Navigation 2 framework: Design,
+principles, and applications,'' \emph{Proc. IEEE/RSJ Int. Conf.
+Intelligent Robots and Systems (IROS)}, Prague, Czech Republic, 2021,
+pp. 3560--3566.
+
+\textbf{{[}6{]}} R. Mur-Artal and J. D. Tardós, ``ORB-SLAM2: An
+open-source SLAM system for monocular, stereo, and RGB-D cameras,''
+\emph{IEEE Transactions on Robotics}, vol. 33, no. 5, pp. 1255--1262,
+Oct. 2017.
+
+\textbf{{[}7{]}} A. P. Narang, S. Verma, and P. Singh, ``Path planning
+of mobile robot using A* algorithm,'' \emph{Int. Journal of Computer
+Applications}, vol. 98, no. 12, pp. 36--40, Jul. 2014.
+
+\textbf{{[}8{]}} L. E. Parker, ``Path planning and motion coordination
+in multiple mobile robot teams,'' \emph{Encyclopedia of Complexity and
+Systems Science}, Springer, 2009, pp. 5783--5800.
+
+\textbf{{[}9{]}} M. Quigley et al., ``ROS: An open-source Robot
+Operating System,'' \emph{Proc. IEEE Int. Conf. Robotics and Automation
+(ICRA) Workshop}, Kobe, Japan, 2009.
+
+\textbf{{[}10{]}} S. Thrun, W. Burgard, and D. Fox, \emph{Probabilistic
+Robotics}, Cambridge, MA, USA: MIT Press, 2005.
+
+\textbf{{[}11{]}} B. Yamauchi, ``A frontier-based approach for
+autonomous exploration,'' \emph{Proc. IEEE Int. Symp. Computational
+Intelligence in Robotics and Automation}, Monterey, CA, USA, 1997, pp.
+146--151.
+
+\textbf{{[}12{]}} Y. Zhang and S. Singh, ``LOAM: Lidar odometry and
+mapping in real-time,'' \emph{Proc. Robotics: Science and Systems
+(RSS)}, Berkeley, CA, USA, 2014.
+
+\end{document}
